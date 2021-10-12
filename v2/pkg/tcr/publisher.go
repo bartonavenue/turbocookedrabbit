@@ -277,7 +277,7 @@ func (pub *Publisher) PublishWithConfirmationTransient(letter *Letter, timeout t
 		channel.NotifyPublish(confirms)
 
 	Publish:
-		timeoutAfter := time.After(timeout)
+		timeoutAfter := time.After(timeout  * time.Millisecond)
 		err := channel.Publish(
 			letter.Envelope.Exchange,
 			letter.Envelope.RoutingKey,
