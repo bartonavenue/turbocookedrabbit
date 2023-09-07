@@ -211,6 +211,9 @@ ConsumeLoop:
 		deliveryChan, err := chanHost.Channel.Consume(con.QueueName, con.ConsumerName, con.autoAck, con.exclusive, false, con.noWait, nil)
 		if err != nil {
 			con.ConnectionPool.ReturnChannel(chanHost, true)
+			if con.sleepOnErrorInterval > 0 {
+				time.Sleep(con.sleepOnErrorInterval)
+			}
 			continue
 		}
 
@@ -245,6 +248,9 @@ func (con *Consumer) processDeliveries(deliveryChan <-chan amqp.Delivery, chanHo
 			if errorMessage != nil {
 				con.ConnectionPool.ReturnChannel(chanHost, true)
 				con.errors <- fmt.Errorf("consumer's current channel closed\r\n[reason: %s]\r\n[code: %d]", errorMessage.Reason, errorMessage.Code)
+				if con.sleepOnErrorInterval > 0 {
+					time.Sleep(con.sleepOnErrorInterval)
+				}
 				return false
 			}
 		default:
@@ -360,5 +366,7 @@ FlushLoop:
 
 // Started allows you to determine if a consumer has started.
 func (con *Consumer) Started() bool {
+	con.conLock.Lock()
+	defer con.conLock.Unlock()
 	return con.started
 }
